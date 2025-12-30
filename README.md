@@ -2,7 +2,7 @@
 
 ![Baleia Azul](logo_baleia_azul.png)
 
-Bem-vindo ao **Baleia Azul - Salve o Oceano**, um emocionante jogo de navegabilidade e sobhttps://chatgpt.com/revivência marinha feito em Lua com Love2D. Controle uma majestosa baleia azul em sua jornada através dos oceanos, evitando obstáculos perigosos e defendendo-se para alcançar a pontuação mais alta!
+Bem-vindo ao **Baleia Azul - Salve o Oceano**, um emocionante jogo de navegabilidade e marinha feito em Lua com Love2D. Controle uma majestosa baleia azul em sua jornada através dos oceanos, evitando obstáculos perigosos e defendendo-se para alcançar a pontuação mais alta!
 
 ## 🎮 Como Jogar
 
