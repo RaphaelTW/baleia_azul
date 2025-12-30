@@ -93,9 +93,14 @@ end
 
 function moveTiros()
     for i = #tiros, 1, -1 do
-        tiros[i].y = tiros[i].y - tiros[i].velocidade
-        if tiros[i].y < -20 then
-            table.remove(tiros, i)
+        local t = tiros[i]
+        -- Não mover efeitos visuais de pontos aqui; eles são atualizados em love.update
+        if not t.tipo or t.tipo ~= "pontos" then
+            local v = t.velocidade or 0
+            t.y = t.y - v
+            if t.y < -20 then
+                table.remove(tiros, i)
+            end
         end
     end
 end
@@ -192,18 +197,20 @@ function checaColisaoComTiros()
         for j = #obstaculos, 1, -1 do
             if temColisao(tiros[i].x, tiros[i].y, tiros[i].largura, tiros[i].altura,
                          obstaculos[j].x, obstaculos[j].y, obstaculos[j].largura, obstaculos[j].altura) then
-                PONTUACAO = PONTUACAO + obstaculos[j].pontos
+                -- Capture data do obstáculo antes de removê-lo
+                local ox, oy, op = obstaculos[j].x, obstaculos[j].y, obstaculos[j].pontos
+                PONTUACAO = PONTUACAO + op
                 table.remove(tiros, i)
                 table.remove(obstaculos, j)
-                -- Adiciona efeito visual de pontos
-                if math.random(100) < 30 then -- 30% de chance de drop
+                -- Adiciona efeito visual de pontos (30% de chance)
+                if math.random(100) < 30 then
                     table.insert(tiros, {
-                        x = obstaculos[j] and obstaculos[j].x or 0,
-                        y = obstaculos[j] and obstaculos[j].y or 0,
+                        x = ox or 0,
+                        y = oy or 0,
                         largura = 10,
                         altura = 10,
                         tipo = "pontos",
-                        texto = "+" .. obstaculos[j].pontos,
+                        texto = "+" .. (op or 0),
                         tempo = 60
                     })
                 end

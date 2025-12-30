@@ -35,29 +35,22 @@ Bem-vindo ao **Baleia Azul - Salve o Oceano**, um emocionante jogo de navegabili
 - Ranking salvo localmente - suas conquistas permanecem entre sessões
 
 ## 🛠️ Requisitos do Sistema
+- **Lua 5.3+** instalado no Sistema
 - **Love2D 11.0+** (disponível em [love2d.org](https://love2d.org))
 - **Windows, macOS ou Linux** com suporte a OpenGL
 
-## 🚀 Instalação e Execução
+## 🚀 Instalação
+1. Clone o repositório para o seu computador:
+```
+git clone https://github.com/RaphaelTW/baleia_azul
+```
 
-### Método 1: Execução Direta (Windows)
-1. **Baixe o Love2D** do site oficial
-2. **Extraia os arquivos do jogo** em uma pasta
-3. **Arraste a pasta do jogo** sobre o executável do Love2D
-4. **Ou** execute via linha de comando:
-   ```
-   love caminho/para/a/pasta/do/jogo
-   ```
+2. Certifique-se de ter Lua e Love2D instalados na sua máquina.
 
-### Método 2: Pacote Executável
-1. **Crie um arquivo .love** (opcional):
-   ```
-   zip -9 -r baleia_azul.love . -x "*.git*"
-   ```
-2. **Execute** com Love2D:
-   ```
-   love baleia_azul.love
-   ```
+3. Navegue até o diretório do jogo e execute-o com o Love2D:
+```
+love .
+```
 
 ### Estrutura de Arquivos
 ```
