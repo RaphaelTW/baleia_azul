@@ -237,7 +237,7 @@ function love.load()
     love.keyboard.setKeyRepeat(true)
 
     -- Carregamento de imagens (mantenha seus arquivos na pasta img)
-    background = love.graphics.newImage("img/background.jpg")
+    background = love.graphics.newImage("img/background.png")
     -- Imagem do menu (opcional)
     if love.filesystem.getInfo("img/menu.png") then
         menu_bg = love.graphics.newImage("img/menu.png")
