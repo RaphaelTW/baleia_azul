@@ -237,7 +237,7 @@ function love.load()
     love.keyboard.setKeyRepeat(true)
 
     -- Carregamento de imagens (mantenha seus arquivos na pasta img)
-    background = love.graphics.newImage("img/background.png")
+    background = love.graphics.newImage("img/background.jpg")
     gameover_img = love.graphics.newImage("img/gameover.png")
     baleia.imagem = love.graphics.newImage(baleia.src)
     
