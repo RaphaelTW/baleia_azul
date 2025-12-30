@@ -365,8 +365,14 @@ function reiniciarJogo()
     ESTADO_JOGO = "jogando"
     NOME_JOGADOR = ""
     
-    if musica_ambiente:isStopped() then
-        musica_ambiente:play()
+    if musica_ambiente then
+        if type(musica_ambiente.isPlaying) == "function" then
+            if not musica_ambiente:isPlaying() then
+                musica_ambiente:play()
+            end
+        else
+            pcall(function() musica_ambiente:play() end)
+        end
     end
 end
 
