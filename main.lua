@@ -3,7 +3,7 @@ ALTURA_TELA = 480
 MAX_OBSTACULOS = 12
 FIM_JOGO = false
 PONTUACAO = 0
-ESTADO_JOGO = "jogando" -- "jogando", "gameover", "ranking", "inserir_nome"
+ESTADO_JOGO = "menu" -- "menu", "jogando", "gameover", "ranking", "inserir_nome"
 NOME_JOGADOR = ""
 RANKING = {}
 MAX_RANKING = 10
@@ -238,6 +238,12 @@ function love.load()
 
     -- Carregamento de imagens (mantenha seus arquivos na pasta img)
     background = love.graphics.newImage("img/background.jpg")
+    -- Imagem do menu (opcional)
+    if love.filesystem.getInfo("img/menu.png") then
+        menu_bg = love.graphics.newImage("img/menu.png")
+    else
+        menu_bg = nil
+    end
     gameover_img = love.graphics.newImage("img/gameover.png")
     baleia.imagem = love.graphics.newImage(baleia.src)
     
@@ -253,10 +259,16 @@ function love.load()
     baleia_tiro_img = love.graphics.newImage("img/tiro.png")
 
     -- Carregamento de áudio
+    -- Música do jogo
     musica_ambiente = love.audio.newSource("audios/ambiente.wav", "stream")
     musica_ambiente:setLooping(true)
     musica_ambiente:setVolume(0.5)
-    musica_ambiente:play()
+
+    -- Música do menu
+    musica_menu = love.audio.newSource("audios/menu.wav", "stream")
+    musica_menu:setLooping(true)
+    musica_menu:setVolume(0.5)
+    musica_menu:play()
 
     destruicao = love.audio.newSource("audios/destruicao.wav", "static")
     game_over = love.audio.newSource("audios/game_over.wav", "static")
@@ -275,6 +287,24 @@ function love.load()
 end
 
 function love.update(dt)
+    -- Menu UI
+    if ESTADO_JOGO == "menu" then
+        love.graphics.setFont(fonte_grande)
+        love.graphics.setColor(0, 0.5, 1)
+        love.graphics.printf("BALEIA AZUL", 0, 60, LARGURA_TELA, "center")
+
+        love.graphics.setFont(fonte_media)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Pressione ESPAÇO para jogar", 0, 140, LARGURA_TELA, "center")
+
+        love.graphics.setFont(fonte_pequena)
+        love.graphics.setColor(0.7, 0.7, 0.7)
+        love.graphics.printf("ESC para sair", 0, ALTURA_TELA - 40, LARGURA_TELA, "center")
+
+        love.graphics.setColor(1, 1, 1)
+        return
+    end
+
     if ESTADO_JOGO == "jogando" then
         if love.keyboard.isDown('w', 'a', 's', 'd', 'up', 'down', 'left', 'right') then
             moveBaleia()
@@ -319,6 +349,10 @@ end
 function love.keypressed(tecla)
     if tecla == "escape" then
         love.event.quit()
+    elseif ESTADO_JOGO == "menu" then
+        if tecla == "space" or tecla == "return" or tecla == "enter" then
+            reiniciarJogo()
+        end
     elseif ESTADO_JOGO == "jogando" then
         if tecla == "space" then
             daTiro()
@@ -334,7 +368,11 @@ function love.keypressed(tecla)
         end
     elseif ESTADO_JOGO == "ranking" then
         if tecla == "space" or tecla == "return" or tecla == "enter" then
-            reiniciarJogo()
+            -- Volta ao menu principal ao invés de reiniciar diretamente
+            ESTADO_JOGO = "menu"
+            -- Parar música do jogo e tocar a do menu
+            if musica_ambiente then pcall(function() musica_ambiente:stop() end) end
+            if musica_menu then pcall(function() musica_menu:play() end) end
         end
     end
 end
@@ -364,7 +402,10 @@ function reiniciarJogo()
     MAX_OBSTACULOS = 12
     ESTADO_JOGO = "jogando"
     NOME_JOGADOR = ""
-    
+    -- Parar música do menu (se existir) e iniciar música do jogo
+    if musica_menu then
+        pcall(function() musica_menu:stop() end)
+    end
     if musica_ambiente then
         if type(musica_ambiente.isPlaying) == "function" then
             if not musica_ambiente:isPlaying() then
@@ -378,7 +419,15 @@ end
 
 function love.draw()
     -- Fundo
-    love.graphics.draw(background, 0, 0)
+    if ESTADO_JOGO == "menu" then
+        if menu_bg then
+            love.graphics.draw(menu_bg, 0, 0)
+        else
+            love.graphics.draw(background, 0, 0)
+        end
+    else
+        love.graphics.draw(background, 0, 0)
+    end
     
     if ESTADO_JOGO == "jogando" then
         -- Desenha baleia
