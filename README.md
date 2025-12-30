@@ -12,7 +12,11 @@ Bem-vindo ao **Baleia Azul - Salve o Oceano**, um emocionante jogo de navegabili
 - **Alcance uma pontuação alta** para entrar no Top 10 do ranking mundial
 - **Proteja os oceanos** representados por diferentes ambientes aquáticos
 
-### Controles
+### 🎮 Controles
+##  Como Jogar
+
+ ![Comandos](img/menu/comandos.png)
+
 - **W/↑, A/←, S/↓, D/→**: Movimentam a baleia azul
 - **ESPAÇO**: Dispara bolhas de ar para destruir obstáculos
 - **ENTER**: Confirmar ações (inserir nome, reiniciar)
