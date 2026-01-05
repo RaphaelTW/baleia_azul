@@ -33,6 +33,28 @@ baleia = {
 obstaculos = {}
 tiros = {}
 
+-- Controle de áudio: garante que apenas uma música toque por vez
+function pararTodasMusicas()
+    if musica_menu then pcall(function() musica_menu:stop() end) end
+    if musica_ambiente then pcall(function() musica_ambiente:stop() end) end
+    if game_over then pcall(function() game_over:stop() end) end
+end
+
+function tocarMusicaMenu()
+    pararTodasMusicas()
+    if musica_menu then pcall(function() musica_menu:play() end) end
+end
+
+function tocarMusicaAmbiente()
+    pararTodasMusicas()
+    if musica_ambiente then pcall(function() musica_ambiente:play() end) end
+end
+
+function tocarSomGameOver()
+    pararTodasMusicas()
+    if game_over then pcall(function() game_over:play() end) end
+end
+
 -- Sistema de ranking
 function carregarRanking()
     local arquivo = love.filesystem.getInfo(ARQUIVO_RANKING)
@@ -186,8 +208,8 @@ function moveBaleia()
 end
 
 function trocaMusicaDeFundo()
-    musica_ambiente:stop()
-    game_over:play()
+    -- Usa helper que para todas as músicas e toca o som de game over
+    tocarSomGameOver()
 end
 
 function checaColisaoComBaleia()
@@ -279,7 +301,8 @@ function love.load()
     musica_menu = love.audio.newSource("audios/menu.wav", "stream")
     musica_menu:setLooping(true)
     musica_menu:setVolume(0.5)
-    musica_menu:play()
+    -- Toca apenas a música do menu (garante que outras foram paradas)
+    tocarMusicaMenu()
 
     destruicao = love.audio.newSource("audios/destruicao.wav", "static")
     game_over = love.audio.newSource("audios/game_over.wav", "static")
@@ -381,9 +404,8 @@ function love.keypressed(tecla)
         if tecla == "space" or tecla == "return" or tecla == "enter" then
             -- Volta ao menu principal ao invés de reiniciar diretamente
             ESTADO_JOGO = "menu"
-            -- Parar música do jogo e tocar a do menu
-            if musica_ambiente then pcall(function() musica_ambiente:stop() end) end
-            if musica_menu then pcall(function() musica_menu:play() end) end
+            -- Toca apenas a música do menu
+            tocarMusicaMenu()
         end
     end
 end
@@ -414,18 +436,8 @@ function reiniciarJogo()
     ESTADO_JOGO = "jogando"
     NOME_JOGADOR = ""
     -- Parar música do menu (se existir) e iniciar música do jogo
-    if musica_menu then
-        pcall(function() musica_menu:stop() end)
-    end
-    if musica_ambiente then
-        if type(musica_ambiente.isPlaying) == "function" then
-            if not musica_ambiente:isPlaying() then
-                musica_ambiente:play()
-            end
-        else
-            pcall(function() musica_ambiente:play() end)
-        end
-    end
+    -- Garante que apenas a música ambiente do jogo toque
+    tocarMusicaAmbiente()
 end
 
 function love.draw()
