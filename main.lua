@@ -158,7 +158,7 @@ end
 
 function destroiBaleia()
     destruicao:play()
-    baleia.src = "img/explosao_nave.png"
+    baleia.src = "img/baleia_dead.png"
     baleia.imagem = love.graphics.newImage(baleia.src)
     baleia.largura = 67
     baleia.altura = 77
@@ -267,17 +267,19 @@ function checaColisaoComBaleia()
             if invulneravel_tempo and invulneravel_tempo > 0 then
                 return false
             end
-            -- Toca som e cria partículas
-            trocaMusicaDeFundo()
+            -- Cria partículas no hit
             criaParticulas(baleia.x + baleia.largura/2, baleia.y + baleia.altura/2, 20, {1, 0.2, 0.2})
             -- reduz vida e coloca invulnerabilidade temporária
             vida = vida - 1
             invulneravel_tempo = 2 -- segundos de invulnerabilidade
             -- remove o obstáculo que colidiu
             table.remove(obstaculos, k)
-            -- Se esgotou a vida, destrói e vai para inserir nome (game over)
+            -- Toca som de hit (não jogo-over imediato)
+            if ponto_som then pcall(function() ponto_som:play() end) end
+            -- Se esgotou a vida, destrói, toca som de game over e vai para inserir nome
             if vida <= 0 then
                 destroiBaleia()
+                if game_over then pcall(function() tocarSomGameOver() end) end
                 ESTADO_JOGO = "inserir_nome"
                 return true
             end
@@ -354,10 +356,10 @@ function love.load()
     
     -- Carrega múltiplos sprites para obstáculos
     obstaculo_imgs = {
-        love.graphics.newImage("img/meteoro.png"),
-        love.graphics.newImage("img/meteoro.png"),
-        love.graphics.newImage("img/meteoro.png"),
-        love.graphics.newImage("img/meteoro.png")
+        love.graphics.newImage("img/trash.png"),
+        love.graphics.newImage("img/trash.png"),
+        love.graphics.newImage("img/trash.png"),
+        love.graphics.newImage("img/trash.png")
     }
     
     tiro_img = love.graphics.newImage("img/tiro.png")
@@ -649,10 +651,12 @@ function love.draw()
         love.graphics.setFont(fonte_media)
         love.graphics.setColor(0, 0.5, 1)
         love.graphics.print("PONTOS: " .. PONTUACAO, 10, 10)
+        -- Garante cor branca antes de desenhar sprites (corações)
+        love.graphics.setColor(1, 1, 1)
         -- Desenha corações de vida no canto superior direito
         local spacing = 4
-        local sx = LARGURA_TELA - (VIDA_MAX * (heart_imgs.life and heart_imgs.life:getWidth() or 16) + (VIDA_MAX-1) * spacing) - 10
-        local sy = 10
+        local sx = LARGURA_TELA - (VIDA_MAX * (heart_imgs.life and heart_imgs.life:getWidth() or 4) + (VIDA_MAX-1) * spacing) - 2
+        local sy = 2
         for i = 1, VIDA_MAX do
             local img = (i <= vida) and (heart_imgs.life or tiro_img) or (heart_imgs.dead or tiro_img)
             love.graphics.draw(img, sx + (i-1) * (img:getWidth() + spacing), sy)
