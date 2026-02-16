@@ -301,7 +301,7 @@ function love.load()
     musica_menu = love.audio.newSource("audios/menu.wav", "stream")
     musica_menu:setLooping(true)
     musica_menu:setVolume(0.5)
-    -- Toca apenas a música do menu (garante que outras foram paradas)
+    -- Toca apenas a música do menu (e garante que outras foram paradas)
     tocarMusicaMenu()
 
     destruicao = love.audio.newSource("audios/destruicao.wav", "static")
@@ -435,8 +435,6 @@ function reiniciarJogo()
     MAX_OBSTACULOS = 12
     ESTADO_JOGO = "jogando"
     NOME_JOGADOR = ""
-    -- Parar música do menu (se existir) e iniciar música do jogo
-    -- Garante que apenas a música ambiente do jogo toque
     tocarMusicaAmbiente()
 end
 
