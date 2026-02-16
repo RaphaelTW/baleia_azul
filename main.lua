@@ -19,6 +19,24 @@ NOME_JOGADOR = ""
 RANKING = {}
 MAX_RANKING = 10
 ARQUIVO_RANKING = "ranking.dat"
+-- Vida / Corações
+VIDA_MAX = 3
+vida = VIDA_MAX
+heart_imgs = { life = nil, dead = nil }
+invulneravel = false
+invulneravel_tempo = 0
+
+-- Sistema de spawn progressivo
+spawn_timer = 0
+spawn_interval = 0.8 -- segundos iniciais entre spawns
+spawn_min_interval = 0.25
+spawn_decrease_rate = 0.0005 -- quanto diminui por ponto/time
+
+-- Partículas e powerups
+particulas = {}
+powerups = {}
+powerup_timer = 0
+
 
 baleia = {
     src = "img/baleia.png",
@@ -180,6 +198,35 @@ function criaObstaculo()
     table.insert(obstaculos, obstaculo)
 end
 
+function criaPowerup()
+    local tipos = {"vida", "pontos", "invuln"}
+    local tipo = tipos[math.random(#tipos)]
+    local p = {
+        x = math.random(10, LARGURA_TELA - 30),
+        y = -30,
+        largura = 24,
+        altura = 24,
+        velocidade = 1.2,
+        tipo = tipo
+    }
+    table.insert(powerups, p)
+end
+
+function criaParticulas(x, y, quantidade, cor)
+    for i = 1, quantidade do
+        local ang = math.rad(math.random(0, 360))
+        local s = math.random() * 60
+        table.insert(particulas, {
+            x = x,
+            y = y,
+            vx = math.cos(ang) * s * 0.02,
+            vy = math.sin(ang) * s * 0.02,
+            tempo = math.random(30, 60),
+            cor = cor or {1, 1, 1}
+        })
+    end
+end
+
 function moveObstaculos()
     for k, obstaculo in pairs(obstaculos) do
         obstaculo.y = obstaculo.y + obstaculo.velocidade
@@ -216,10 +263,25 @@ function checaColisaoComBaleia()
     for k, obstaculo in pairs(obstaculos) do
         if temColisao(obstaculo.x, obstaculo.y, obstaculo.largura, obstaculo.altura, 
                      baleia.x, baleia.y, baleia.largura, baleia.altura) then
+            -- Se estiver invulnerável, ignora colisão
+            if invulneravel_tempo and invulneravel_tempo > 0 then
+                return false
+            end
+            -- Toca som e cria partículas
             trocaMusicaDeFundo()
-            destroiBaleia()
-            ESTADO_JOGO = "inserir_nome"
-            return true
+            criaParticulas(baleia.x + baleia.largura/2, baleia.y + baleia.altura/2, 20, {1, 0.2, 0.2})
+            -- reduz vida e coloca invulnerabilidade temporária
+            vida = vida - 1
+            invulneravel_tempo = 2 -- segundos de invulnerabilidade
+            -- remove o obstáculo que colidiu
+            table.remove(obstaculos, k)
+            -- Se esgotou a vida, destrói e vai para inserir nome (game over)
+            if vida <= 0 then
+                destroiBaleia()
+                ESTADO_JOGO = "inserir_nome"
+                return true
+            end
+            return false
         end
     end
     return false
@@ -234,6 +296,13 @@ function checaColisaoComTiros()
                 local ox, oy, op = obstaculos[j].x, obstaculos[j].y, obstaculos[j].pontos
                 PONTUACAO = PONTUACAO + op
                 table.remove(tiros, i)
+                -- partículas na destruição
+                criaParticulas(ox + 10, oy + 10, 12, {1, 0.8, 0.2})
+                -- pequena chance de soltar um powerup
+                if math.random() < 0.08 then
+                    local p = { x = ox, y = oy, largura = 20, altura = 20, velocidade = 1.2, tipo = (math.random() < 0.5 and "vida" or "pontos") }
+                    table.insert(powerups, p)
+                end
                 table.remove(obstaculos, j)
                 -- Adiciona efeito visual de pontos (30% de chance)
                 if math.random(100) < 30 then
@@ -271,6 +340,9 @@ function love.load()
 
     -- Carregamento de imagens (mantenha seus arquivos na pasta img)
     background = love.graphics.newImage("img/background.png")
+    -- Fundo animado: cria duas cópias para scroll vertical
+    bg_scroll = 0
+    bg_speed = 20
     -- Imagem do menu (opcional)
     if love.filesystem.getInfo("img/menu.png") then
         menu_bg = love.graphics.newImage("img/menu.png")
@@ -291,6 +363,21 @@ function love.load()
     tiro_img = love.graphics.newImage("img/tiro.png")
     baleia_tiro_img = love.graphics.newImage("img/tiro.png")
 
+    -- Corações de vida
+    if love.filesystem.getInfo("img/heart_life.png") then
+        heart_imgs.life = love.graphics.newImage("img/heart_life.png")
+    end
+    if love.filesystem.getInfo("img/heart_dead.png") then
+        heart_imgs.dead = love.graphics.newImage("img/heart_dead.png")
+    end
+
+    -- Powerup sprite (reutiliza tiro como fallback)
+    if love.filesystem.getInfo("img/powerup.png") then
+        powerup_img = love.graphics.newImage("img/powerup.png")
+    else
+        powerup_img = tiro_img
+    end
+
     -- Carregamento de áudio
     -- Música do jogo
     musica_ambiente = love.audio.newSource("audios/ambiente.wav", "stream")
@@ -301,7 +388,7 @@ function love.load()
     musica_menu = love.audio.newSource("audios/menu.wav", "stream")
     musica_menu:setLooping(true)
     musica_menu:setVolume(0.5)
-    -- Toca apenas a música do menu (e garante que outras foram paradas)
+    -- Toca apenas a música do menu (garante que outras foram paradas)
     tocarMusicaMenu()
 
     destruicao = love.audio.newSource("audios/destruicao.wav", "static")
@@ -340,22 +427,64 @@ function love.update(dt)
     end
 
     if ESTADO_JOGO == "jogando" then
+        -- Atualiza fundo animado
+        bg_scroll = (bg_scroll + bg_speed * dt) % background:getHeight()
+
+        -- Movimenta jogador
         if love.keyboard.isDown('w', 'a', 's', 'd', 'up', 'down', 'left', 'right') then
             moveBaleia()
         end
 
-        removeObstaculos()
-        if #obstaculos < MAX_OBSTACULOS then
-            if math.random(100) < 3 then -- 3% de chance a cada frame
+        -- Invulnerabilidade temporária
+        if invulneravel_tempo and invulneravel_tempo > 0 then
+            invulneravel_tempo = math.max(0, invulneravel_tempo - dt)
+        end
+
+        -- Spawn progressivo baseado em intervalo e pontuação
+        spawn_timer = spawn_timer + dt
+        -- Diminui o intervalo levemente com a pontuação
+        spawn_interval = math.max(spawn_min_interval, 0.8 - (PONTUACAO * spawn_decrease_rate))
+        if spawn_timer >= spawn_interval then
+            spawn_timer = 0
+            if #obstaculos < MAX_OBSTACULOS then
                 criaObstaculo()
             end
         end
-        
+
+        -- Atualiza powerups: spawn ocasional e movimento
+        powerup_timer = powerup_timer + dt
+        if powerup_timer > 8 and math.random() < 0.25 then
+            criaPowerup()
+            powerup_timer = 0
+        end
+
+        -- Move e limpa obstáculos, tiros e powerups
+        removeObstaculos()
         moveObstaculos()
         moveTiros()
+
+        for i = #powerups, 1, -1 do
+            local p = powerups[i]
+            p.y = p.y + p.velocidade
+            if p.y > ALTURA_TELA + 30 then
+                table.remove(powerups, i)
+            elseif temColisao(p.x, p.y, p.largura, p.altura, baleia.x, baleia.y, baleia.largura, baleia.altura) then
+                -- Colidiu com powerup
+                if p.tipo == "vida" then
+                    if vida < VIDA_MAX then vida = vida + 1 end
+                elseif p.tipo == "pontos" then
+                    PONTUACAO = PONTUACAO + 100
+                elseif p.tipo == "invuln" then
+                    invulneravel_tempo = 4
+                end
+                criaParticulas(p.x + p.largura/2, p.y + p.altura/2, 10, {0.6, 1, 0.6})
+                table.remove(powerups, i)
+            end
+        end
+
         checaColisoes()
-        
-        -- Atualiza efeitos de pontos
+
+        -- Atualiza efeitos de pontos (tiros tipo "pontos")
         for i = #tiros, 1, -1 do
             if tiros[i].tipo == "pontos" then
                 tiros[i].tempo = tiros[i].tempo - 1
@@ -365,14 +494,24 @@ function love.update(dt)
                 end
             end
         end
-        
-        -- Aumenta dificuldade com o tempo
+
+        -- Atualiza partículas
+        for i = #particulas, 1, -1 do
+            local par = particulas[i]
+            par.x = par.x + par.vx
+            par.y = par.y + par.vy
+            par.vy = par.vy + 0.02
+            par.tempo = par.tempo - 1
+            if par.tempo <= 0 then table.remove(particulas, i) end
+        end
+
+        -- Aumenta dificuldade com a pontuação (limita MAX_OBSTACULOS)
         if PONTUACAO > 1000 then
-            MAX_OBSTACULOS = 15
+            MAX_OBSTACULOS = 18
         elseif PONTUACAO > 500 then
-            MAX_OBSTACULOS = 14
+            MAX_OBSTACULOS = 16
         elseif PONTUACAO > 200 then
-            MAX_OBSTACULOS = 13
+            MAX_OBSTACULOS = 14
         end
         
     elseif ESTADO_JOGO == "inserir_nome" then
@@ -435,6 +574,14 @@ function reiniciarJogo()
     MAX_OBSTACULOS = 12
     ESTADO_JOGO = "jogando"
     NOME_JOGADOR = ""
+    -- Reset vida e sistemas
+    vida = VIDA_MAX
+    invulneravel_tempo = 0
+    particulas = {}
+    powerups = {}
+    spawn_timer = 0
+    spawn_interval = 0.8
+    bg_scroll = 0
     tocarMusicaAmbiente()
 end
 
@@ -447,12 +594,25 @@ function love.draw()
             love.graphics.draw(background, 0, 0)
         end
     else
-        love.graphics.draw(background, 0, 0)
+        -- Desenha fundo animado com scroll vertical para sensação de movimento
+        local bh = background:getHeight()
+        local y1 = -bg_scroll
+        love.graphics.draw(background, 0, y1)
+        love.graphics.draw(background, 0, y1 + bh)
     end
     
     if ESTADO_JOGO == "jogando" then
         -- Desenha baleia
-        love.graphics.draw(baleia.imagem, baleia.x, baleia.y, 0, 1, 1)
+        -- Pisca se invulnerável
+        if invulneravel_tempo and invulneravel_tempo > 0 then
+            if math.floor(love.timer.getTime() * 6) % 2 == 0 then
+                love.graphics.setColor(1, 1, 1, 0.6)
+                love.graphics.draw(baleia.imagem, baleia.x, baleia.y, 0, 1, 1)
+                love.graphics.setColor(1,1,1)
+            end
+        else
+            love.graphics.draw(baleia.imagem, baleia.x, baleia.y, 0, 1, 1)
+        end
         
         -- Desenha obstáculos
         for k, obstaculo in pairs(obstaculos) do
@@ -472,11 +632,31 @@ function love.draw()
                 love.graphics.draw(baleia_tiro_img, tiro.x, tiro.y)
             end
         end
+
+        -- Desenha powerups
+        for k, p in pairs(powerups) do
+            love.graphics.draw(powerup_img, p.x, p.y, 0, p.largura / powerup_img:getWidth(), p.altura / powerup_img:getHeight())
+        end
+
+        -- Desenha partículas
+        for k, par in pairs(particulas) do
+            love.graphics.setColor(par.cor)
+            love.graphics.rectangle("fill", par.x, par.y, 2, 2)
+            love.graphics.setColor(1,1,1)
+        end
         
         -- Interface do jogador
         love.graphics.setFont(fonte_media)
         love.graphics.setColor(0, 0.5, 1)
         love.graphics.print("PONTOS: " .. PONTUACAO, 10, 10)
+        -- Desenha corações de vida no canto superior direito
+        local spacing = 4
+        local sx = LARGURA_TELA - (VIDA_MAX * (heart_imgs.life and heart_imgs.life:getWidth() or 16) + (VIDA_MAX-1) * spacing) - 10
+        local sy = 10
+        for i = 1, VIDA_MAX do
+            local img = (i <= vida) and (heart_imgs.life or tiro_img) or (heart_imgs.dead or tiro_img)
+            love.graphics.draw(img, sx + (i-1) * (img:getWidth() + spacing), sy)
+        end
         
         love.graphics.setFont(fonte_pequena)
         love.graphics.print("Controles:", 10, ALTURA_TELA - 70)
