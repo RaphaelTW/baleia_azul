@@ -59,7 +59,7 @@ baleia_azul/
 ├── img/              # Sprites e imagens do jogo
 │   ├── baleia.png
 │   ├── background.png
-│   ├── meteoro.png
+│   ├── lixo-garrafa-pet.png
 │   ├── tiro.png
 │   └── explosao_nave.png
 ├── audios/           # Efeitos sonoros e música
@@ -98,16 +98,12 @@ Contribuições são bem-vindas! Se você deseja:
 - Gráficos e animações aprimoradas
 
 ## 👨‍💻 Créditos
-**Desenvolvido por** RaphaelTW com adaptação do jogo original "14bis vs Meteoros"
-
-**Baseado no projeto original de**:
-- [RaphaelTW](https://github.com/RaphaelTW)
-- [MatheusDAGL](https://github.com/MatheusDAGL)
+**Desenvolvido por** [RaphaelTW](https://github.com/RaphaelTW)
 
 **Recursos utilizados**:
 - Love2D Framework
 - Lua Programming Language
-- Arte e sons originais adaptados
+- Arte e sons do jogo
 
 ## 🌊 Sobre o Tema Marinho
 O jogo promove conscientização sobre a vida marinha:
